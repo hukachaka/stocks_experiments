@@ -7,12 +7,17 @@ to_date = datetime.date(2018, 3, 6)
 
 cnx = sqlite3.connect('stocks.db')
 
-cur = cnx.cursor()
-cur.execute('SELECT DISTINCT(Symbol) FROM stocks')
-
 symbols_already_downloaded = []
-for s in cur.fetchall():
-    symbols_already_downloaded.append(s[0])
+
+cur = cnx.cursor()
+try:
+    cur.execute('SELECT DISTINCT(Symbol) FROM stocks')
+    for s in cur.fetchall():
+        symbols_already_downloaded.append(s[0])
+except sqlite3.OperationalError:
+    print('Stocks table doesn\'t exist yet')
+finally:
+    cur.close()
 
 with open('symbols.csv', 'r') as symbols_file:
     first_symbol = True
@@ -37,7 +42,7 @@ with open('symbols.csv', 'r') as symbols_file:
 
             symbol_df.to_sql('stocks',
                              cnx,
-                             if_exists='replace' if first_symbol else 'append')
+                             if_exists='append')
             first_symbol = False
         except:
             print('Problem with %s' % symbol)
